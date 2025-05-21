@@ -14,38 +14,42 @@ const UpdateMovie = () => {
 
   const [movieData, setMovieData] = useState({
     name: "",
-    year: 0,
+    year: "",
     detail: "",
     cast: [],
     ratings: 0,
-    image: null,
+    image: "",
   });
 
   const [selectedImage, setSelectedImage] = useState(null);
   const { data: initialMovieData } = useGetSpecificMovieQuery(id);
 
+  const [updateMovie, { isLoading: isUpdatingMovie }] = useUpdateMovieMutation();
+  const [uploadImage, { isLoading: isUploadingImage }] = useUploadImageMutation();
+  const [deleteMovie] = useDeleteMovieMutation();
+
   useEffect(() => {
     if (initialMovieData) {
-      setMovieData(initialMovieData);
+      setMovieData({
+        ...initialMovieData,
+        cast: Array.isArray(initialMovieData.cast)
+          ? initialMovieData.cast
+          : initialMovieData.cast?.split(",").map((c) => c.trim()) || [],
+      });
     }
   }, [initialMovieData]);
-
-  const [updateMovie, { isLoading: isUpdatingMovie }] =
-    useUpdateMovieMutation();
-
-  const [
-    uploadImage,
-    { isLoading: isUploadingImage, error: uploadImageErrorDetails },
-  ] = useUploadImageMutation();
-
-  const [deleteMovie] = useDeleteMovieMutation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setMovieData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: name === "year" || name === "ratings" ? Number(value) : value,
     }));
+  };
+
+  const handleCastChange = (e) => {
+    const castArray = e.target.value.split(",").map((c) => c.trim());
+    setMovieData((prevData) => ({ ...prevData, cast: castArray }));
   };
 
   const handleImageChange = (e) => {
@@ -55,158 +59,125 @@ const UpdateMovie = () => {
 
   const handleUpdateMovie = async () => {
     try {
-      if (
-        !movieData.name ||
-        !movieData.year ||
-        !movieData.detail ||
-        !movieData.cast
-      ) {
+      const { name, year, detail, cast } = movieData;
+      if (!name || !year || !detail || cast.length === 0) {
         toast.error("Please fill in all required fields");
         return;
       }
 
-      let uploadedImagePath = movieData.image;
+      let imagePath = movieData.image;
 
       if (selectedImage) {
         const formData = new FormData();
         formData.append("image", selectedImage);
+        const { data, error } = await uploadImage(formData);
 
-        const uploadImageResponse = await uploadImage(formData);
-
-        if (uploadImageResponse.data) {
-          uploadedImagePath = uploadImageResponse.data.image;
-        } else {
-          console.error("Failed to upload image:", uploadImageErrorDetails);
-          toast.error("Failed to upload image");
+        if (error || !data?.imageUrl) {
+          toast.error("Image upload failed");
           return;
         }
+
+        imagePath = data.imageUrl;
       }
 
       await updateMovie({
-        id: id,
-        updatedMovie: {
-          ...movieData,
-          image: uploadedImagePath,
-        },
-      });
+        id,
+        updatedMovie: { ...movieData, image: imagePath },
+      }).unwrap();
 
+      toast.success("Movie updated successfully");
       navigate("/movies");
     } catch (error) {
-      console.error("Failed to update movie:", error);
+      console.error("Update failed:", error);
+      toast.error("Failed to update movie");
     }
   };
 
   const handleDeleteMovie = async () => {
     try {
+      await deleteMovie(id).unwrap();
       toast.success("Movie deleted successfully");
-      await deleteMovie(id);
       navigate("/movies");
     } catch (error) {
-      console.error("Failed to delete movie:", error);
-      toast.error(`Failed to delete movie: ${error?.message}`);
+      console.error("Delete failed:", error);
+      toast.error("Failed to delete movie");
     }
   };
 
   return (
     <div className="container flex justify-center items-center mt-4">
-      <form>
-        <p className="text-green-200 w-[50rem] text-2xl mb-4">Update Movie</p>
+      <form className="w-full max-w-xl p-6 border rounded shadow bg-white">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">Update Movie</h2>
 
-        <div className="mb-4">
-          <label className="block">
-            Name:
-            <input
-              type="text"
-              name="name"
-              value={movieData.name}
-              onChange={handleChange}
-              className="border px-2 py-1 w-full"
-            />
-          </label>
-        </div>
-        <div className="mb-4">
-          <label className="block">
-            Year:
-            <input
-              type="number"
-              name="year"
-              value={movieData.year}
-              onChange={handleChange}
-              className="border px-2 py-1 w-full"
-            />
-          </label>
-        </div>
-        <div className="mb-4">
-          <label className="block">
-            Detail:
-            <textarea
-              name="detail"
-              value={movieData.detail}
-              onChange={handleChange}
-              className="border px-2 py-1 w-full"
-            />
-          </label>
-        </div>
-        <div className="mb-4">
-          <label className="block">
-            Cast (comma-separated):
-            <input
-              type="text"
-              name="cast"
-              value={movieData.cast.join(", ")}
-              onChange={(e) =>
-                setMovieData({ ...movieData, cast: e.target.value.split(", ") })
-              }
-              className="border px-2 py-1 w-full"
-            />
-          </label>
-        </div>
+        <label className="block mb-3">
+          <span className="text-gray-700">Name:</span>
+          <input
+            type="text"
+            name="name"
+            value={movieData.name}
+            onChange={handleChange}
+            className="w-full mt-1 border px-3 py-2 rounded"
+          />
+        </label>
 
-        <div className="mb-4">
-          <label
-            style={
-              !selectedImage
-                ? {
-                    border: "1px solid #888",
-                    borderRadius: "5px",
-                    padding: "8px",
-                  }
-                : {
-                    border: "0",
-                    borderRadius: "0",
-                    padding: "0",
-                  }
-            }
+        <label className="block mb-3">
+          <span className="text-gray-700">Year:</span>
+          <input
+            type="number"
+            name="year"
+            value={movieData.year}
+            onChange={handleChange}
+            className="w-full mt-1 border px-3 py-2 rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          <span className="text-gray-700">Detail:</span>
+          <textarea
+            name="detail"
+            value={movieData.detail}
+            onChange={handleChange}
+            className="w-full mt-1 border px-3 py-2 rounded"
+          />
+        </label>
+
+        <label className="block mb-3">
+          <span className="text-gray-700">Cast (comma-separated):</span>
+          <input
+            type="text"
+            value={movieData.cast.join(", ")}
+            onChange={handleCastChange}
+            className="w-full mt-1 border px-3 py-2 rounded"
+          />
+        </label>
+
+        <label className="block mb-4">
+          <span className="text-gray-700">Upload Image:</span>
+          <input type="file" accept="image/*" onChange={handleImageChange} />
+        </label>
+
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={handleUpdateMovie}
+            disabled={isUpdatingMovie || isUploadingImage}
+            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded disabled:opacity-60"
           >
-            {!selectedImage && "Upload Image"}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              style={{ display: !selectedImage ? "none" : "block" }}
-            />
-          </label>
+            {isUpdatingMovie || isUploadingImage ? "Updating..." : "Update Movie"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDeleteMovie}
+            disabled={isUpdatingMovie}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded disabled:opacity-60"
+          >
+            Delete Movie
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={handleUpdateMovie}
-          className="bg-teal-500 text-white px-4 py-2 rounded"
-          disabled={isUpdatingMovie || isUploadingImage}
-        >
-          {isUpdatingMovie || isUploadingImage ? "Updating..." : "Update Movie"}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleDeleteMovie}
-          className="bg-red-500 text-white px-4 py-2 rounded ml-2"
-          disabled={isUpdatingMovie || isUploadingImage}
-        >
-          {isUpdatingMovie || isUploadingImage ? "Deleting..." : "Delete Movie"}
-        </button>
       </form>
     </div>
   );
 };
+
 export default UpdateMovie;

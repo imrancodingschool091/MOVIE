@@ -8,6 +8,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/all-movies`,
         credentials: "include",
       }),
+      providesTags: ["Movies"],
     }),
 
     createMovie: builder.mutation({
@@ -17,6 +18,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         body: newMovie,
         credentials: "include",
       }),
+      invalidatesTags: ["Movies"],
     }),
 
     updateMovie: builder.mutation({
@@ -26,15 +28,22 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         body: updatedMovie,
         credentials: "include",
       }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Movies", id },
+        "Movies",
+      ],
     }),
 
     addMovieReview: builder.mutation({
       query: ({ id, rating, comment }) => ({
         url: `${MOVIE_URL}/${id}/reviews`,
         method: "POST",
-        body: { rating, id, comment },
+        body: { rating, comment },
         credentials: "include",
       }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Movies", id },
+      ],
     }),
 
     deleteComment: builder.mutation({
@@ -44,6 +53,9 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         body: { movieId, reviewId },
         credentials: "include",
       }),
+      invalidatesTags: (result, error, { movieId }) => [
+        { type: "Movies", id: movieId },
+      ],
     }),
 
     deleteMovie: builder.mutation({
@@ -52,6 +64,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         method: "DELETE",
         credentials: "include",
       }),
+      invalidatesTags: ["Movies"],
     }),
 
     getSpecificMovie: builder.query({
@@ -59,6 +72,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/specific-movie/${id}`,
         credentials: "include",
       }),
+      providesTags: (result, error, id) => [{ type: "Movies", id }],
     }),
 
     uploadImage: builder.mutation({
@@ -67,7 +81,9 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: formData,
         credentials: "include",
+        // Don't set Content-Type manually, browser sets it automatically with FormData
       }),
+      invalidatesTags: ["Movies"], // optional: update if your upload affects movie list
     }),
 
     getNewMovies: builder.query({
@@ -75,6 +91,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/new-movies`,
         credentials: "include",
       }),
+      providesTags: ["Movies"],
     }),
 
     getTopMovies: builder.query({
@@ -82,6 +99,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/top-movies`,
         credentials: "include",
       }),
+      providesTags: ["Movies"],
     }),
 
     getRandomMovies: builder.query({
@@ -89,6 +107,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/random-movies`,
         credentials: "include",
       }),
+      providesTags: ["Movies"],
     }),
   }),
 });

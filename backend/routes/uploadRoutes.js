@@ -1,87 +1,100 @@
-import path from "path";
 import express from "express";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config();
 
 const router = express.Router();
 
-// Configure Cloudinary
+// ✅ Cloudinary Configuration
+if (
+  !process.env.CLOUDINARY_CLOUD_NAME ||
+  !process.env.CLOUDINARY_API_KEY ||
+  !process.env.CLOUDINARY_API_SECRET
+) {
+  throw new Error("Missing Cloudinary configuration");
+}
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
-// File filter for image validation
+// ✅ Constants
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const CLOUDINARY_FOLDER = "uploads";
+
+// ✅ Multer Setup
 const fileFilter = (req, file, cb) => {
-  const allowedExt = /jpg|jpeg|png|webp/;
-  const allowedMime = /image\/jpg|image\/jpeg|image\/png|image\/webp/;
-
   const extname = path.extname(file.originalname).toLowerCase().slice(1);
-  const mimetype = file.mimetype;
-
-  if (allowedExt.test(extname) && allowedMime.test(mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only JPG, JPEG, PNG, and WEBP images are allowed"), false);
+  if (
+    !ALLOWED_EXTENSIONS.includes(extname) ||
+    !file.mimetype.startsWith("image/")
+  ) {
+    return cb(
+      new Error("Invalid file type. Please upload a JPG, JPEG, PNG, or WEBP image."),
+      false
+    );
   }
+  cb(null, true);
 };
 
-// Memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ 
-  storage,
+const upload = multer({
+  storage: multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: MAX_FILE_SIZE, files: 1 },
 });
 
-const uploadSingleImage = upload.single("image");
+// ✅ Error handler middleware
+const handleUploadErrors = (err, req, res, next) => {
+  if (err instanceof multer.MulterError || err) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+  next();
+};
 
-router.post("/", (req, res) => {
-  uploadSingleImage(req, res, async (err) => {
-    if (err instanceof multer.MulterError) {
-      return res.status(500).json({ message: "Upload error", error: err.message });
-    } else if (err) {
-      return res.status(400).json({ message: err.message });
-    }
-
+// ✅ Upload Route
+router.post("/", upload.single("image"), handleUploadErrors, async (req, res) => {
+  try {
     if (!req.file) {
-      return res.status(400).json({ message: "No image file provided" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No image file provided" });
     }
 
-    try {
-      const result = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "your_folder_name",
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        );
-        
-        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
-      });
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: CLOUDINARY_FOLDER,
+          resource_type: "image",
+          use_filename: true,
+          unique_filename: true,
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+    });
 
-      return res.status(200).json({
-        message: "Image uploaded to Cloudinary successfully",
-        imageUrl: result.secure_url,
-        publicId: result.public_id,
-        format: result.format,
-        width: result.width,
-        height: result.height
-      });
-
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      return res.status(500).json({ 
-        message: "Error uploading to Cloudinary",
-        error: error.message 
-      });
-    }
-  });
+    return res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+      imageUrl: result.secure_url,
+    });
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error during image upload" });
+  }
 });
 
 export default router;
