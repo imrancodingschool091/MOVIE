@@ -4,13 +4,18 @@ import { MOVIE_URL, UPLOAD_URL } from "../constants";
 export const moviesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAllMovies: builder.query({
-      query: () => `${MOVIE_URL}/all-movies`,
+      query: () => ({
+        url: `${MOVIE_URL}/all-movies`,
+        credentials: "include",
+      }),
     }),
+
     createMovie: builder.mutation({
       query: (newMovie) => ({
         url: `${MOVIE_URL}/create-movie`,
         method: "POST",
         body: newMovie,
+        credentials: "include",
       }),
     }),
 
@@ -19,6 +24,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/update-movie/${id}`,
         method: "PUT",
         body: updatedMovie,
+        credentials: "include",
       }),
     }),
 
@@ -27,6 +33,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/${id}/reviews`,
         method: "POST",
         body: { rating, id, comment },
+        credentials: "include",
       }),
     }),
 
@@ -35,6 +42,7 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${MOVIE_URL}/delete-comment`,
         method: "DELETE",
         body: { movieId, reviewId },
+        credentials: "include",
       }),
     }),
 
@@ -42,11 +50,15 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `${MOVIE_URL}/delete-movie/${id}`,
         method: "DELETE",
+        credentials: "include",
       }),
     }),
 
     getSpecificMovie: builder.query({
-      query: (id) => `${MOVIE_URL}/specific-movie/${id}`,
+      query: (id) => ({
+        url: `${MOVIE_URL}/specific-movie/${id}`,
+        credentials: "include",
+      }),
     }),
 
     uploadImage: builder.mutation({
@@ -54,19 +66,29 @@ export const moviesApiSlice = apiSlice.injectEndpoints({
         url: `${UPLOAD_URL}`,
         method: "POST",
         body: formData,
+        credentials: "include",
       }),
     }),
 
     getNewMovies: builder.query({
-      query: () => `${MOVIE_URL}/new-movies`,
+      query: () => ({
+        url: `${MOVIE_URL}/new-movies`,
+        credentials: "include",
+      }),
     }),
 
     getTopMovies: builder.query({
-      query: () => `${MOVIE_URL}/top-movies`,
+      query: () => ({
+        url: `${MOVIE_URL}/top-movies`,
+        credentials: "include",
+      }),
     }),
 
     getRandomMovies: builder.query({
-      query: () => `${MOVIE_URL}/random-movies`,
+      query: () => ({
+        url: `${MOVIE_URL}/random-movies`,
+        credentials: "include",
+      }),
     }),
   }),
 });
@@ -80,7 +102,6 @@ export const {
   useGetSpecificMovieQuery,
   useUploadImageMutation,
   useDeleteMovieMutation,
-  //
   useGetNewMoviesQuery,
   useGetTopMoviesQuery,
   useGetRandomMoviesQuery,

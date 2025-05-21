@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { FiArrowLeft } from "react-icons/fi";
 import {
   useGetSpecificMovieQuery,
   useAddMovieReviewMutation,
@@ -28,70 +29,105 @@ const MovieDetails = () => {
       }).unwrap();
 
       refetch();
-
-      toast.success("Review created successfully");
+      setRating(0);
+      setComment("");
+      toast.success("Review submitted successfully");
     } catch (error) {
       toast.error(error.data || error.message);
     }
   };
 
   return (
-    <>
-      <div>
+    <div className="bg-gray-900 min-h-screen text-white py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back Button */}
         <Link
           to="/"
-          className="  text-white font-semibold hover:underline ml-[20rem]"
+          className="inline-flex items-center text-teal-400 hover:text-teal-300 transition-colors duration-200 mb-8 text-lg"
         >
-          Go Back
+          <FiArrowLeft className="mr-2" size={20} />
+          Back to Movies
         </Link>
-      </div>
 
-      <div className="mt-[2rem]">
-        <div className="flex justify-center items-center">
-          <img
-            src={movie?.image}
-            alt={movie?.name}
-            className="w-[70%] rounded"
-          />
-        </div>
-        {/* Container One */}
-        <div className="container  flex justify-between ml-[20rem] mt-[3rem]">
-          <section>
-            <h2 className="text-5xl my-4 font-extrabold">{movie?.name}</h2>
-            <p className="my-4 xl:w-[35rem] lg:w-[35rem] md:w-[30rem] text-[#B0B0B0]">
-              {movie?.detail}
-            </p>
-          </section>
+        {/* Movie Content */}
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Movie Poster */}
+          <div className="lg:w-2/5 xl:w-1/3">
+            <div className="rounded-xl overflow-hidden shadow-2xl border-2 border-gray-700 hover:border-teal-400 transition-all duration-300">
+              <img
+                src={movie?.image || '/placeholder-movie.jpg'}
+                alt={movie?.name || 'Movie poster'}
+                className="w-full h-full object-cover aspect-[2/3]"
+                onError={(e) => {
+                  e.target.src = '/placeholder-movie.jpg';
+                }}
+              />
+            </div>
+          </div>
 
-          <div className="mr-[5rem]">
-            <p className="text-2xl font-semibold">
-              Releasing Date: {movie?.year}
-            </p>
+          {/* Movie Info */}
+          <div className="lg:w-3/5 xl:w-2/3">
+            <div className="mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-teal-400">
+                  {movie?.name}
+                </h1>
+                {movie?.year && (
+                  <span className="text-2xl text-gray-400 bg-gray-800 px-4 py-2 rounded-lg">
+                    {movie.year}
+                  </span>
+                )}
+              </div>
 
-            <div>
-              {movie?.cast.map((c) => (
-                <ul key={c._id}>
-                  <li className="mt-[1rem]">{c}</li>
-                </ul>
-              ))}
+              {/* Rating */}
+              {movie?.rating && (
+                <div className="flex items-center mb-6">
+                  <StarRating rating={movie.rating} />
+                  <span className="ml-3 text-xl text-gray-300">
+                    {movie.rating.toFixed(1)}/5
+                  </span>
+                </div>
+              )}
+
+              <p className="text-gray-300 text-lg leading-relaxed mb-8">
+                {movie?.detail || 'No description available.'}
+              </p>
+
+              {/* Cast */}
+              {movie?.cast?.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-2xl font-semibold mb-4 text-teal-400">Cast</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {movie.cast.map((actor, index) => (
+                      <span
+                        key={index}
+                        className="bg-gray-800 px-4 py-2 rounded-full text-sm hover:bg-teal-600 hover:text-white transition-colors duration-200"
+                      >
+                        {actor}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tabs Section */}
+            <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+              <MovieTabs
+                loadingMovieReview={loadingMovieReview}
+                userInfo={userInfo}
+                submitHandler={submitHandler}
+                rating={rating}
+                setRating={setRating}
+                comment={comment}
+                setComment={setComment}
+                movie={movie}
+              />
             </div>
           </div>
         </div>
-
-        <div className="container ml-[20rem]">
-          <MovieTabs
-            loadingMovieReview={loadingMovieReview}
-            userInfo={userInfo}
-            submitHandler={submitHandler}
-            rating={rating}
-            setRating={setRating}
-            comment={comment}
-            setComment={setComment}
-            movie={movie}
-          />
-        </div>
       </div>
-    </>
+    </div>
   );
 };
 

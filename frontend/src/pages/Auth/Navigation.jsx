@@ -4,9 +4,8 @@ import {
   AiOutlineLogin,
   AiOutlineUserAdd,
 } from "react-icons/ai";
-import { MdOutlineLocalMovies } from "react-icons/md";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { MdOutlineLocalMovies, MdDashboard } from "react-icons/md";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useLogoutMutation } from "../../redux/api/users";
 import { logout } from "../../redux/features/auth/authSlice";
@@ -15,14 +14,14 @@ const Navigation = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [logoutApiCall] = useLogoutMutation();
+
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
 
   const logoutHandler = async () => {
     try {
@@ -37,7 +36,7 @@ const Navigation = () => {
   return (
     <div className="fixed bottom-10 left-[30rem] transform translate-x-1/2 translate-y-1/2 z-50 bg-[#0f0f0f] border w-[30%] px-[4rem] mb-[2rem] rounded">
       <section className="flex justify-between items-center">
-        {/* Section 1 */}
+        {/* Section 1 - Nav Icons */}
         <div className="flex justify-center items-center mb-[2rem]">
           <Link
             to="/"
@@ -55,55 +54,52 @@ const Navigation = () => {
             <span className="hidden nav-item-name mt-[3rem]">SHOP</span>
           </Link>
         </div>
-        {/* Section 2 */}
+
+        {/* Section 2 - Auth/Dropdown */}
         <div className="relative">
           <button
             onClick={toggleDropdown}
             className="text-gray-800 focus:outline-none"
           >
-            {userInfo ? (
-              <span className="text-white">{userInfo.username}</span>
-            ) : (
-              <></>
-            )}
-
             {userInfo && (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className={`h-4 w-4 ml-1 ${
-                  dropdownOpen ? "transform rotate-180" : ""
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="white"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d={dropdownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
-                />
-              </svg>
+              <div className="flex items-center text-white">
+                <span>{userInfo.username}</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-4 w-4 ml-1 transition-transform duration-200 ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="white"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d={dropdownOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
+                  />
+                </svg>
+              </div>
             )}
           </button>
 
           {dropdownOpen && userInfo && (
             <ul
-              className={`absolute right-0 mt-2 mr-14 w-[10rem] space-y-2 bg-white text-gray-600 ${
+              className={`absolute right-0 mt-2 mr-14 w-[10rem] space-y-2 bg-white text-gray-600 shadow-lg rounded ${
                 !userInfo.isAdmin ? "-top-20" : "-top-24"
               }`}
             >
               {userInfo.isAdmin && (
-                <>
-                  <li>
-                    <Link
-                      to="/admin/movies/dashboard"
-                      className="block px-4 py-2 hover:bg-gray-100"
-                    >
-                      Dashboard
-                    </Link>
-                  </li>
-                </>
+                <li>
+                  <Link
+                    to="/admin/movies/dashboard"
+                    className="flex items-center px-4 py-2 hover:bg-gray-100"
+                  >
+                    <MdDashboard className="mr-2" />
+                    Dashboard
+                  </Link>
+                </li>
               )}
 
               <li>

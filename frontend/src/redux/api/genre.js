@@ -8,6 +8,7 @@ export const genreApiSlice = apiSlice.injectEndpoints({
         url: `${GENRE_URL}`,
         method: "POST",
         body: newGenre,
+        credentials: "include", // required to send cookies
       }),
     }),
 
@@ -16,6 +17,7 @@ export const genreApiSlice = apiSlice.injectEndpoints({
         url: `${GENRE_URL}/${id}`,
         method: "PUT",
         body: updateGenre,
+        credentials: "include",
       }),
     }),
 
@@ -23,11 +25,15 @@ export const genreApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `${GENRE_URL}/${id}`,
         method: "DELETE",
+        credentials: "include",
       }),
     }),
 
     fetchGenres: builder.query({
-      query: () => `${GENRE_URL}/genres`,
+      query: () => ({
+        url: `${GENRE_URL}/genres`,
+        credentials: "include",
+      }),
     }),
   }),
 });
