@@ -18,10 +18,12 @@ connectDB();
 
 const app = express();
 
+const allowOrigins=["https://movie-woad-pi-73.vercel.app","http://localhost:5173"]
+
 // middlewares
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:5173",  // your frontend origin
+  origin: allowOrigins,  // your frontend origin
   credentials: true,                 // allow cookies to be sent
 }));
 app.use(express.urlencoded({ extended: true }));
