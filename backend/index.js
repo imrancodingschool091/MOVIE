@@ -18,14 +18,25 @@ connectDB();
 
 const app = express();
 
-const allowOrigins=["https://movie-woad-pi-73.vercel.app","http://localhost:5173"]
 
 // middlewares
 app.use(express.json());
+
+const allowOrigins = ["https://movie-woad-pi-73.vercel.app", "http://localhost:5173"];
+
 app.use(cors({
-  origin: allowOrigins,  // your frontend origin
-  credentials: true,                 // allow cookies to be sent
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
 }));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
