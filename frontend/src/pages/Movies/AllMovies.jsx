@@ -18,11 +18,11 @@ import {
 
 const AllMovies = () => {
   const dispatch = useDispatch();
-  const { data } = useGetAllMoviesQuery();
-  const { data: genres } = useFetchGenresQuery();
-  const { data: newMovies } = useGetNewMoviesQuery();
-  const { data: topMovies } = useGetTopMoviesQuery();
-  const { data: randomMovies } = useGetRandomMoviesQuery();
+  const { data, isLoading: isLoadingAllMovies } = useGetAllMoviesQuery();
+  const { data: genres, isLoading: isLoadingGenres } = useFetchGenresQuery();
+  const { data: newMovies, isLoading: isLoadingNewMovies } = useGetNewMoviesQuery();
+  const { data: topMovies, isLoading: isLoadingTopMovies } = useGetTopMoviesQuery();
+  const { data: randomMovies, isLoading: isLoadingRandomMovies } = useGetRandomMoviesQuery();
 
   const { moviesFilter, filteredMovies } = useSelector((state) => state.movies);
 
@@ -86,6 +86,11 @@ const AllMovies = () => {
     }));
   };
 
+  // Combined loading state
+  const isLoading = isLoadingAllMovies || isLoadingGenres || 
+                   isLoadingNewMovies || isLoadingTopMovies || 
+                   isLoadingRandomMovies;
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       {/* Hero Banner */}
@@ -138,65 +143,77 @@ const AllMovies = () => {
           </div>
 
           {/* Filter Controls */}
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              {/* Genre Filter */}
-              <select
-                className="flex-1 bg-gray-700/80 border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
-                value={moviesFilter.selectedGenre}
-                onChange={(e) => handleGenreClick(e.target.value)}
-              >
-                <option value="">All Genres</option>
-                {genres?.map((genre) => (
-                  <option key={genre._id} value={genre._id}>
-                    {genre.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* Year Filter */}
-              <select
-                className="flex-1 bg-gray-700/80 border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
-                value={moviesFilter.selectedYear}
-                onChange={(e) => handleYearChange(e.target.value)}
-              >
-                <option value="">All Years</option>
-                {uniqueYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-
-              {/* Sort Options */}
-              <select
-                className="flex-1 bg-gray-700/80 border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
-                value={moviesFilter.selectedSort}
-                onChange={(e) => handleSortChange(e.target.value)}
-              >
-                <option value="">Sort By</option>
-                <option value="new">New Releases</option>
-                <option value="top">Top Rated</option>
-                <option value="random">Random Picks</option>
-              </select>
+          {isLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
             </div>
+          ) : (
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                {/* Genre Filter */}
+                <select
+                  className="flex-1 bg-gray-700/80 border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
+                  value={moviesFilter.selectedGenre}
+                  onChange={(e) => handleGenreClick(e.target.value)}
+                  disabled={isLoadingGenres}
+                >
+                  <option value="">All Genres</option>
+                  {genres?.map((genre) => (
+                    <option key={genre._id} value={genre._id}>
+                      {genre.name}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Reset Button */}
-            {(moviesFilter.selectedGenre || moviesFilter.selectedYear || moviesFilter.selectedSort || moviesFilter.searchTerm) && (
-              <button
-                onClick={resetFilters}
-                className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white rounded-lg transition duration-200 whitespace-nowrap font-medium shadow-md hover:shadow-lg"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
+                {/* Year Filter */}
+                <select
+                  className="flex-1 bg-gray-700/80 border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
+                  value={moviesFilter.selectedYear}
+                  onChange={(e) => handleYearChange(e.target.value)}
+                  disabled={isLoadingAllMovies}
+                >
+                  <option value="">All Years</option>
+                  {uniqueYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Sort Options */}
+                <select
+                  className="flex-1 bg-gray-700/80 border border-gray-600 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
+                  value={moviesFilter.selectedSort}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                >
+                  <option value="">Sort By</option>
+                  <option value="new">New Releases</option>
+                  <option value="top">Top Rated</option>
+                  <option value="random">Random Picks</option>
+                </select>
+              </div>
+
+              {/* Reset Button */}
+              {(moviesFilter.selectedGenre || moviesFilter.selectedYear || moviesFilter.selectedSort || moviesFilter.searchTerm) && (
+                <button
+                  onClick={resetFilters}
+                  className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white rounded-lg transition duration-200 whitespace-nowrap font-medium shadow-md hover:shadow-lg"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Movies Grid */}
       <div className="container mx-auto px-4 py-12">
-        {filteredMovies?.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-40">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-500"></div>
+          </div>
+        ) : filteredMovies?.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filteredMovies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
